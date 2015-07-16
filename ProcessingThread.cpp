@@ -50,7 +50,8 @@ static inline double angle(Point pt1, Point pt2, Point pt0)
   return (dx1*dx2 + dy1*dy2) / sqrt((dx1*dx1 + dy1*dy1)*(dx2*dx2 + dy2*dy2) + 1e-10);
 }
 
-bool CheckCrossParams(vector<Point> cross){
+bool CheckCrossParams(vector<Point> cross)
+{
   //фильтр контуров по параметрам углов
   if (cross.size() != 8) return false;
   for (int j = 0; j < cross.size() - 3; j++)
@@ -67,7 +68,8 @@ bool CheckCrossParams(vector<Point> cross){
   }
 
   int x[8], y[8];
-  for (int i = 0; i < 8; i++){
+  for (int i = 0; i < 8; i++)
+  {
     x[i] = cross[i].x;
     y[i] = cross[i].y;
   }
@@ -114,7 +116,8 @@ void ProcessingThread::mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Poin
   }
   else
   {
-    for (int i = 0; i<prev_pts.size(); i++){
+    for (int i = 0; i < prev_pts.size(); i++)
+    {
       prev_pts_vp[i] = prev_pts[i];
     }
     // просчёт смещения точек
