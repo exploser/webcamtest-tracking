@@ -22,5 +22,6 @@ private:
   bool mCrossDetect(Mat img, vector<Point2f> &cross);
   void mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Point2f> &prev_pts, vector<Point2f> &orig_pts);
   void run();
+  Mat intrinsics, distortion;
   TSDataHandler<Mat> *mDataHandler_in, *mDataHandler_out;
 };
