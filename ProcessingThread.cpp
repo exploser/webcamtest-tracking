@@ -2,6 +2,17 @@
 
 ProcessingThread::ProcessingThread(TSDataHandler<Mat> *dh_in, TSDataHandler<Mat> *dh_out)
 {
+  // инициализация файлов калибровки
+  if(intr.open("Intrinsics.xml", FileStorage::READ) && dist.open("Distortion.xml", FileStorage::READ))
+  {
+    intr["Intrinsics"] >> intrinsics;
+    dist["Distortion"] >> distortion;
+  }
+  else
+  {
+    intrinsics = Mat::zeros(3,3, CV_8UC1);
+    distortion = Mat::zeros(3,3, CV_8UC1);
+  }
   // инициализация
   this->mDataHandler_in = dh_in;
 
