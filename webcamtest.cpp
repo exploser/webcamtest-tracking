@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
   // инициализация очереди на обработку изображения
   TSDataHandler<Mat>* cap2proc = new TSDataHandler<Mat>();
   // инициализация очереди для вывода 
-  TSDataHandler<Mat>* proc2out = new TSDataHandler<Mat>();
+  TSDataHandler<Point2f>* proc2out = new TSDataHandler<Point2f>();
   cv::Mat img;
 
   // инициализация и старт потоков считывания и обработки данных
@@ -21,14 +21,10 @@ int main(int argc, char* argv[])
   // цикл вывода обработанных изображений
   forever
   {
-    int key = -1;
-    if (proc2out->Read(img))
+    Point2f out;
+    if (proc2out->Read(out))
     {
-      cv::imshow("Output", img);
-      key = cv::waitKey(1);
-      // если нажат esc, то break
-      if (key == 27)
-        break;
+      cout << out << endl;
     }
   }
 
