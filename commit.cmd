@@ -1,1 +1,2 @@
 for %%I in (*.cpp *.h) do copy %%I "C:\Users\explo_000\Documents\RoboCP\Sandbox\RoboConnection\CrossDetecter"
+del "C:\Users\explo_000\Documents\RoboCP\Sandbox\RoboConnection\CrossDetecter\webcamtest.cpp"
