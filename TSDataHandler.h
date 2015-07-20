@@ -12,7 +12,7 @@ public:
   virtual void Write(T input) = 0;
   virtual bool Read(T &output) = 0;
   virtual bool Peek(T &output) = 0;
-  virtual int Size() = 0;
+  virtual size_t Size() = 0;
 };
 
 template <class T> class TSDataHandler : public DataHandler < T >
@@ -25,7 +25,7 @@ public:
   void Write(T input);
   bool Read(T &output);
   bool Peek(T &output);
-  int Size();
+  size_t Size();
 private:
   int mCapacity;
   // Очередь данных
@@ -77,7 +77,7 @@ bool TSDataHandler<T>::Read(T &output)
 }
 
 template <class T>
-int TSDataHandler<T>::Size()
+size_t TSDataHandler<T>::Size()
 {
   return mQueue.size();
 }
@@ -115,7 +115,7 @@ public:
   void Write(T input);
   bool Read(T &output);
   bool Peek(T &output);
-  int Size();
+  size_t Size();
 private:
   T mElement;
   QMutex mMutex;
@@ -145,7 +145,7 @@ bool OneElementDataHandler<T>::Read(T &output)
 }
 
 template <class T>
-int OneElementDataHandler<T>::Size()
+size_t OneElementDataHandler<T>::Size()
 {
   if (mElement == 0) return 0;
   else return 1;

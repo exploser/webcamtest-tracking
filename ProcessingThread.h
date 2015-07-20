@@ -9,6 +9,7 @@
 #include "TSDataHandler.h"
 #include "TimingsDebug.h"
 #include "DebugOutput.h"
+#include <iostream>
 
 using namespace std;
 using namespace cv;
@@ -18,13 +19,14 @@ class ProcessingThread :
   public QThread
 {
 public:
-  ProcessingThread(TSDataHandler<Mat> *dh_in, TSDataHandler<Mat> *dh_out = NULL);
+  ProcessingThread(TSDataHandler<Mat> *dh_in, TSDataHandler<Point2f> *dh_out = NULL);
   ~ProcessingThread();
 private:
   bool mCrossDetect(Mat img, vector<Point2f> &cross);
-  void mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Point2f> &prev_pts, vector<Point2f> &orig_pts);
+  void mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Point2f> &prev_pts, vector<Point2f> &orig_pts, Point2f &offset);
   void run();
-  TSDataHandler<Mat> *mDataHandler_in, *mDataHandler_out;
+  TSDataHandler<Mat> *mDataHandler_in;
+  TSDataHandler<Point2f> *mDataHandler_out;
   vector<Point2f> object;
   vector<Point3f> frame;
   Mat mIntrinsics, mDistortion;
