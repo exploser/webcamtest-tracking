@@ -13,14 +13,14 @@
 <Camera_Matrix type_id="opencv-matrix">
   <rows>3</rows>
   <cols>3</cols>
-  <dt>d</dt>
+  <dt>f</dt>
   <data>
     6.6256365028637822e+002 0. 3.1950000000000000e+002 0.
     6.6256365028637822e+002 2.3950000000000000e+002 0. 0. 1.</data></Camera_Matrix>
 <Distortion_Coefficients type_id="opencv-matrix">
   <rows>5</rows>
   <cols>1</cols>
-  <dt>d</dt>
+  <dt>f</dt>
   <data>
     1.5158393435647097e-001 -9.2274015540996979e-001 0. 0.
     1.4620199535887497e+000</data></Distortion_Coefficients>

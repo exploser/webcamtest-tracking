@@ -1,0 +1,1 @@
+for %%I in (*.cpp *.h) do copy %%I "C:\Users\explo_000\Documents\RoboCP\Sandbox\RoboConnection\CrossDetecter"
