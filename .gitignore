@@ -286,3 +286,4 @@ Debug*/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+targetver.h
