@@ -12,7 +12,7 @@ public:
   virtual void Write(T input) = 0;
   virtual bool Read(T &output) = 0;
   virtual bool Peek(T &output) = 0;
-  int Size() = 0;
+  virtual int Size() = 0;
 };
 
 template <class T> class TSDataHandler : public DataHandler < T >
@@ -110,8 +110,8 @@ template <class T> class OneElementDataHandler : public DataHandler < T >
     /*Contains only most recently added element*/
 {
 public:
-  TSDataHandler();
-  ~TSDataHandler();
+  OneElementDataHandler();
+  ~OneElementDataHandler();
   void Write(T input);
   bool Read(T &output);
   bool Peek(T &output);
@@ -163,7 +163,7 @@ bool OneElementDataHandler<T>::Peek(T &output)
 }
 
 template <class T>
-OneElementDataHandler<T>::~TSDataHandler()
+OneElementDataHandler<T>::~OneElementDataHandler()
 {
 
 }
