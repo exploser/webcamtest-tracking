@@ -86,6 +86,7 @@ static inline double angle(Point pt1, Point pt2, Point pt0)
 template<typename T>
 bool CheckCrossParams(vector<T> cross)
 {
+  //проверка параметров углов
   for (int j = 0; j < cross.size() - 3; j++)
   {
     double ang1 = angle(cross[j], cross[j + 1], cross[j + 2]);
@@ -99,22 +100,21 @@ bool CheckCrossParams(vector<T> cross)
     }
   }
 
-  // проверка соотношений ширины/длины сторон креста
+  //находим длины сторон креста
   double length_top = (abs(cross[0].x - cross[2].x) + abs(cross[0].y - cross[2].y)) / 2;
   double length_bot = (abs(cross[2].x - cross[3].x) + abs(cross[2].y - cross[3].y)) / 2;
   double length_left = (abs(cross[1].x - cross[2].x) + abs(cross[1].y - cross[2].y)) / 2;
   double length_right = (abs(cross[2].x - cross[4].x) + abs(cross[2].y - cross[4].y)) / 2;
 
+  //проверяем соотношения сторон креста
   double eps = 0.3;
   if ((length_top / length_bot) - 1 > eps) return false;
   if ((length_left / length_right) - 1 > eps) return false;
 
+  //TODO переписать нормально
   double ratio1 = ((abs(length_top - length_bot) / length_top + abs(length_top - length_bot) / length_bot)) / 2;
   double ratio2 = ((abs(length_left - length_right) / length_left + abs(length_left - length_right) / length_right)) / 2;
-
-  double avgRatio = (ratio1 + ratio2) / 2;
-  //printf(" %f %f %f %f \n", length_top, length_bot, length_left, length_right);
-
+  
   if (abs(ratio1 + ratio2) / 2 > 0.2)
   {
     return false;
@@ -167,7 +167,7 @@ void ProcessingThread::mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Poin
       }
     }
     //vector<Point2f> imgpts;
-    // вывод новых данных 
+    // вывод новых данных  
     if (next_pts.size() == 5)
     {
       DBG_DrawOutputLine(next_pts[0], next_pts[3]);
@@ -189,26 +189,25 @@ void ProcessingThread::mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Poin
 
 Point intersection(Point p1, Point p2, Point p3, Point p4)
 {
-
   double x1 = p1.x, x2 = p2.x, x3 = p3.x, x4 = p4.x;
   double y1 = p1.y, y2 = p2.y, y3 = p3.y, y4 = p4.y;
 
   double d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-  // If d is zero, there is no intersection
+  // если d = 0, отрезки не пересекаются
   if (d == 0) return NULL;
 
-  // Get the x and y
+  // находим x, y
   double pre = (x1*y2 - y1*x2), post = (x3*y4 - y3*x4);
   double x = (pre * (x3 - x4) - (x1 - x2) * post) / d;
   double y = (pre * (y3 - y4) - (y1 - y2) * post) / d;
 
-  // Check if the x and y coordinates are within both lines
+  // проверка правильности найденных x, y
   if (x < min(x1, x2) || x > max(x1, x2) ||
     x < min(x3, x4) || x > max(x3, x4)) return NULL;
   if (y < min(y1, y2) || y > max(y1, y2) ||
     y < min(y3, y4) || y > max(y3, y4)) return NULL;
 
-  // Return the point of intersection
+  //возвращаем точку пересечения
   Point ret;
   ret.x = x;
   ret.y = y;
@@ -217,47 +216,31 @@ Point intersection(Point p1, Point p2, Point p3, Point p4)
 
 bool ProcessingThread::mCrossDetect(Mat gray, vector<Point2f> &cross)
 {
-  RotatedRect rRect;
-  int aPDcoeff_int = 20;
-  double tresholdmin = 0.6;
-  int tresholdmin_int = 6;
-  int tresholdmax_int = 6;
-  int tresholdCannyMin = 1100;
-  int tresholdCannyMax = 1500;
+  Mat bw; //ч-б изображение
+  Mat blurr; //размытое изображение
+  vector<Mat> contours; //найденные контуры findContours()
+  vector<Point> approx; //найденные аппроксимации контуров
+  vector<Point> hull; //выпуклая оболочка
   bool iscross = true;
-
-  double aPDcoeff = (double)aPDcoeff_int / 1000;
-  if (aPDcoeff <= 0) aPDcoeff = 0.01;
-
-  Mat bw;
-  Mat blurr;
-  vector<Mat> contours;
-  vector<Point> approx;
-  vector<Point>hull;
-
+  //размываем изображение
   blur(gray, gray, Point(3, 3));
-
-  //threshold(gray, bw, tresholdCannyMin, tresholdCannyMax, THRESH_OTSU);
-
-  Canny(gray, bw, tresholdCannyMin, tresholdCannyMax, 5);
-
+  //находим грани
+  Canny(gray, bw, 1100, 1500, 5);
+  //находим контуры
   findContours(bw.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-  //vector<vector<Point> >hull(contours.size());
-  //aPDcoeff = 0.01;
+  //проход по найденным контурам, проверка(является ли крестом)
   for (int i = 0; i < contours.size(); i++)
   {
-    //arcLength(Mat(contours[i]), true)*aPDcoeff
-    approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true)*aPDcoeff, true);
-    //!(approx.size() == 8)
+    //аппроксимация контура для исключения различных неровностей
+    approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true)*0.02, true);
+    //проверка минимальной площади контура/проверка на выпуклость
     if (fabs(contourArea(contours[i])) < 200 || isContourConvex(approx))
       continue;
-
-    convexHull(Mat(contours[i]), hull, false);
+    //нахождение выпуклой оболочки контура
+    convexHull(Mat(approx), hull, false);
 
     //сравнение площади контура и convexHull
     double ColoredPercentage = double(contourArea(contours[i])) / double(contourArea(hull));
-    //printf("ColoredPercentage: %f \n", ColoredPercentage);
     if (ColoredPercentage > 0.35 || ColoredPercentage < 0.2) continue;
 
     //нахождение углов креста
@@ -273,15 +256,16 @@ bool ProcessingThread::mCrossDetect(Mat gray, vector<Point2f> &cross)
       if (hull[i].x < min_x) { min_x = hull[i].x; i3 = i; }
       if (hull[i].y < min_y) { min_y = hull[i].y; i4 = i; }
     }
-    Point inter = intersection(Point(min_x, hull[i3].y), Point(max_x, hull[i1].y), Point(hull[i4].x, min_y), Point(hull[i2].x, max_y));
-
+    //нахождение центра креста
+    Point center = intersection(Point(min_x, hull[i3].y), Point(max_x, hull[i1].y), Point(hull[i4].x, min_y), Point(hull[i2].x, max_y));
+    //внесение новых значений углов и центра
     cross.clear();
     cross.push_back(Point(hull[i2].x, max_y));
     cross.push_back(Point(min_x, hull[i3].y));
-    cross.push_back(inter);
+    cross.push_back(center);
     cross.push_back(Point(hull[i4].x, min_y));
     cross.push_back(Point(max_x, hull[i1].y));
-
+    
     if (!CheckCrossParams(cross))
     {
       cross.clear();
@@ -291,20 +275,6 @@ bool ProcessingThread::mCrossDetect(Mat gray, vector<Point2f> &cross)
     {
       return true;
     }
-
-    LineIterator it(gray, Point(min_x, hull[i3].y), Point(max_x, hull[i1].y), 8);
-    vector<Vec3b> buf(it.count);
-    vector<Point> points(it.count);
-
-    //line(display, vertices[0], vertices[2], Scalar(255, 255, 0));
-    /*int avg_sum = 0;
-    for (int i = 0; i < it.count; i++, ++it)
-    {
-      points[i] = it.pos();
-      Vec3b colour = gray.at<Vec3b>(points[i]);
-      avg_sum += (colour.val[0] + colour.val[1] + colour.val[2]) / 3;
-      if (it.count - i - 1 == 0)  avg_sum = avg_sum / i;
-    }*/
   }
   return false;
 }
