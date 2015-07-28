@@ -106,8 +106,8 @@ bool CheckCrossParams(vector<T> cross)
   double length_right = (abs(cross[2].x - cross[4].x) + abs(cross[2].y - cross[4].y)) / 2;
 
   double eps = 0.3;
-  if ((length_top / length_bot) - 1 > eps) return false;
-  if ((length_left / length_right) - 1 > eps) return false;
+  //if ((length_top / length_bot) - 1 > eps) return false;
+  //if ((length_left / length_right) - 1 > eps) return false;
 
   double ratio1 = ((abs(length_top - length_bot) / length_top + abs(length_top - length_bot) / length_bot)) / 2;
   double ratio2 = ((abs(length_left - length_right) / length_left + abs(length_left - length_right) / length_right)) / 2;
@@ -133,11 +133,12 @@ void ProcessingThread::mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Poin
   cvtColor(lastimg, nextimg, CV_BGR2GRAY);
   Point2f center = Point2f(previmg.size().width / 2, previmg.size().height / 2);
   vector<Point> prevptsasd(prev_pts.begin(), prev_pts.end());
+  Point2f loc_offset;
   // алгоритм обнаружения на данном этапе всегда вернёт 8 точек
   if (orig_pts.size() != 5)
   {
     prev_pts.clear();
-
+    offset = Point2f(0, 0);
     // в случае обнаружения креста задаём начальные данные для OpticalFlow
     //goodFeaturesToTrack(nextimg, prev_pts, 8, 0.01, 2);
     if (mCrossDetect(nextimg, prev_pts))
@@ -153,6 +154,7 @@ void ProcessingThread::mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Poin
     {
       calcOpticalFlowPyrLK(previmg, nextimg, prev_pts, next_pts, m_status, m_error);
       offset = next_pts[2] - center;
+
     }
 
     // проверка наличия и запись нового положения точек
@@ -166,7 +168,7 @@ void ProcessingThread::mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Poin
         orig_pts_new.push_back(orig_pts[i]);
       }
     }
-    //vector<Point2f> imgpts;
+
     // вывод новых данных 
     if (next_pts.size() == 5)
     {
@@ -177,13 +179,34 @@ void ProcessingThread::mOpticalFlowHandle(Mat &previmg, Mat lastimg, vector<Poin
       DBG_DrawOutputCircle(next_pts[3]);
       DBG_DrawOutputCircle(next_pts[4]);
       DBG_DrawOutputLine(next_pts[1], next_pts[4]);
+
+      orig_pts = orig_pts_new;
+      prev_pts = tracked_pts;
+      Point2f conv_height = next_pts[0] - next_pts[3];
+      Point2f conv_width = next_pts[1] - next_pts[4];
+      double len = sqrt(conv_height.x*conv_height.x + conv_height.y*conv_height.y);
+      double len_s = sqrt(conv_width.x*conv_width.x + conv_width.y*conv_width.y);
+      double height = max(len, len_s);
+      double width = min(len, len_s);
+      float focal = mIntrinsics.at<float>(0, 0);
+      double dist = focal * 190 * previmg.size().height / (height * 500);
+      double angle = CV_PI / 2 - acos(width / height);
+      cout << dist << endl;
+      cout << angle << endl;
+      double off = dist * (1.0 / sin(angle));
+      double offlen = offset.x*offset.x + offset.y*offset.y;
+      loc_offset = offset*(off / offlen);
     }
-    orig_pts = orig_pts_new;
-    prev_pts = tracked_pts;
+    else
+    {
+      orig_pts.clear();
+    }
+
     nextimg.copyTo(previmg);
   }
   DBG_WriteFrame(dbg_outputImage);
-  mDataHandler_out->Write(offset);
+
+  mDataHandler_out->Write(-loc_offset);
 
 }
 
@@ -235,6 +258,10 @@ bool ProcessingThread::mCrossDetect(Mat gray, vector<Point2f> &cross)
   vector<Point> approx;
   vector<Point>hull;
 
+  line(gray, Point(0, 0), Point(gray.size().width, 0), Scalar(175), 3);
+  line(gray, Point(0, 0), Point(0, gray.size().height), Scalar(175), 3);
+  line(gray, Point(gray.size().width, gray.size().height), Point(gray.size().width, 0), Scalar(175), 3);
+  line(gray, Point(gray.size().width, gray.size().height), Point(0, gray.size().height), Scalar(175), 3);
   blur(gray, gray, Point(3, 3));
 
   //threshold(gray, bw, tresholdCannyMin, tresholdCannyMax, THRESH_OTSU);
@@ -300,10 +327,10 @@ bool ProcessingThread::mCrossDetect(Mat gray, vector<Point2f> &cross)
     /*int avg_sum = 0;
     for (int i = 0; i < it.count; i++, ++it)
     {
-      points[i] = it.pos();
-      Vec3b colour = gray.at<Vec3b>(points[i]);
-      avg_sum += (colour.val[0] + colour.val[1] + colour.val[2]) / 3;
-      if (it.count - i - 1 == 0)  avg_sum = avg_sum / i;
+    points[i] = it.pos();
+    Vec3b colour = gray.at<Vec3b>(points[i]);
+    avg_sum += (colour.val[0] + colour.val[1] + colour.val[2]) / 3;
+    if (it.count - i - 1 == 0)  avg_sum = avg_sum / i;
     }*/
   }
   return false;

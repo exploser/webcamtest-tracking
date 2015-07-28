@@ -25,7 +25,8 @@ int main(int argc, char* argv[])
     Point2f out;
     if (proc2out->Read(out) && dbg_outputImage->Read(img))
     {
-      cout << out << endl;
+      //cout << out << endl;
+      cv::circle(img, Point2f(img.size().width / 2, img.size().height / 2) - out, 5, Scalar(255), 2);
       imshow("OUTPUT", img);
       waitKey(1);
     }
